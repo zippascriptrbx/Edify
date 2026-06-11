@@ -1076,43 +1076,60 @@ async function openAudioEditorWindow() {
 }
 
 function setupAutoUpdater() {
-  if (!app.isPackaged) return;
+  if (!app.isPackaged) {
+    ipcMain.handle('edify:checkForUpdates', async () => ({
+      ok: true,
+      status: 'not-packaged',
+      detail: 'Auto updates only run from the installed packaged app.'
+    }));
+    return;
+  }
 
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  let updateBusy = false;
 
-  autoUpdater.on('update-available', (info) => {
+  const sendUpdateStatus = (payload: Record<string, unknown>) => {
     mainWindow?.webContents.send('edify:exportProgress', {
       type: 'app-update',
+      required: true,
+      ...payload
+    });
+  };
+
+  autoUpdater.on('update-available', (info) => {
+    updateBusy = true;
+    sendUpdateStatus({
       phase: 'available',
       version: info.version,
-      required: true
+      percent: 4,
+      detail: 'A required Edify update is available and will download automatically.'
     });
   });
 
   autoUpdater.on('download-progress', (progress) => {
-    mainWindow?.webContents.send('edify:exportProgress', {
-      type: 'app-update',
+    sendUpdateStatus({
       phase: 'downloading',
-      percent: Math.round(progress.percent)
+      percent: Math.round(progress.percent),
+      bytesPerSecond: progress.bytesPerSecond,
+      transferred: progress.transferred,
+      total: progress.total
     });
   });
 
   autoUpdater.on('update-downloaded', (info) => {
-    mainWindow?.webContents.send('edify:exportProgress', {
-      type: 'app-update',
+    sendUpdateStatus({
       phase: 'downloaded',
       version: info.version,
       percent: 100,
-      required: true
+      detail: 'Download complete. Edify is preparing a clean restart.'
     });
     setTimeout(() => {
-      mainWindow?.webContents.send('edify:exportProgress', {
-        type: 'app-update',
+      sendUpdateStatus({
         phase: 'installing',
         version: info.version,
         percent: 100,
-        required: true
+        detail: 'Installing update now. Edify will restart automatically.'
       });
       setTimeout(() => {
         autoUpdater.quitAndInstall();
@@ -1120,19 +1137,51 @@ function setupAutoUpdater() {
     }, 900);
   });
 
+  autoUpdater.on('update-not-available', (info) => {
+    updateBusy = false;
+    sendUpdateStatus({
+      phase: 'idle',
+      version: info.version,
+      percent: 0,
+      detail: 'Edify is already up to date.'
+    });
+  });
+
   autoUpdater.on('error', (error) => {
+    updateBusy = false;
     console.error('Edify auto update error:', error);
-    mainWindow?.webContents.send('edify:exportProgress', {
-      type: 'app-update',
+    sendUpdateStatus({
       phase: 'error',
       detail: error instanceof Error ? error.message : 'Unknown update error',
-      required: true
+      percent: 0
     });
+  });
+
+  ipcMain.handle('edify:checkForUpdates', async () => {
+    if (updateBusy) {
+      return { ok: true, status: 'busy', detail: 'An update check or download is already running.' };
+    }
+    try {
+      updateBusy = true;
+      sendUpdateStatus({
+        phase: 'checking',
+        percent: 2,
+        detail: 'Checking GitHub releases for the latest Edify build.'
+      });
+      const result = await autoUpdater.checkForUpdates();
+      updateBusy = Boolean(result?.updateInfo?.version && result.updateInfo.version !== app.getVersion());
+      return { ok: true, status: 'checking', version: result?.updateInfo?.version };
+    } catch (error) {
+      updateBusy = false;
+      const detail = error instanceof Error ? error.message : 'Update check failed.';
+      sendUpdateStatus({ phase: 'error', detail, percent: 0 });
+      return { ok: false, status: 'error', detail };
+    }
   });
 
   app.whenReady().then(() => {
     setTimeout(() => {
-      void autoUpdater.checkForUpdatesAndNotify().catch((error) => {
+      void autoUpdater.checkForUpdates().catch((error) => {
         console.error('Edify update check failed:', error);
       });
     }, 3500);

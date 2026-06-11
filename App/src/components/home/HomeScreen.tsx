@@ -134,6 +134,42 @@ export const HomeScreen = memo(function HomeScreen({
         </div>
       </section>
 
+      <section className="home-project-launcher" aria-label="Project launcher">
+        <button className="home-launch-card home-launch-card-primary" type="button" onClick={() => onNewProject('Untitled Edit')}>
+          <span className="home-launch-icon"><Video size={20} /></span>
+          <span>
+            <small>Video</small>
+            <strong>New Video Project</strong>
+            <em>Timeline, captions, render, and export</em>
+          </span>
+        </button>
+        <button className="home-launch-card" type="button" onClick={onOpenThumbnailStudio}>
+          <span className="home-launch-icon"><ImagePlus size={20} /></span>
+          <span>
+            <small>Thumbnail</small>
+            <strong>New Thumbnail</strong>
+            <em>PNG covers, text styles, and pack presets</em>
+          </span>
+        </button>
+        <button className="home-launch-card home-launch-card-new" type="button" onClick={onOpenAudioEditor}>
+          <span className="home-launch-icon"><AudioLines size={20} /></span>
+          <span>
+            <small>Audio</small>
+            <strong>New Audio Project</strong>
+            <em>Record, clean, mix, and export sound</em>
+          </span>
+          <b>NEW</b>
+        </button>
+        <button className="home-launch-card" type="button" onClick={onOpenAccount}>
+          <span className="home-launch-icon"><UserRound size={20} /></span>
+          <span>
+            <small>Account</small>
+            <strong>{accountUser ? 'Cloud Sync Ready' : 'Connect Account'}</strong>
+            <em>{accountUser ? 'Packs, rewards, and profile attached' : 'Sync profile, premium, and rewards'}</em>
+          </span>
+        </button>
+      </section>
+
       <section className="home-dashboard-strip">
         {dashboardCards.map((card) => {
           const Icon = card.icon;

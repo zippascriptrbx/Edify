@@ -406,6 +406,11 @@ export function AudioEditorWindow() {
   const [recording, setRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [recordingLevel, setRecordingLevel] = useState(0.12);
+  const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
+  const [selectedInputId, setSelectedInputId] = useState('');
+  const [inputGain, setInputGain] = useState(1);
+  const [monitoring, setMonitoring] = useState(false);
+  const [recordCountdown, setRecordCountdown] = useState(0);
   const [autosaveStamp, setAutosaveStamp] = useState('Saved just now');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [fullscreenPreview, setFullscreenPreview] = useState(false);
@@ -479,6 +484,17 @@ export function AudioEditorWindow() {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [recording]);
+
+  useEffect(() => {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    void navigator.mediaDevices.enumerateDevices()
+      .then((devices) => {
+        const inputs = devices.filter((device) => device.kind === 'audioinput');
+        setAudioInputs(inputs);
+        if (!selectedInputId && inputs[0]) setSelectedInputId(inputs[0].deviceId);
+      })
+      .catch(() => undefined);
+  }, [selectedInputId]);
 
   const stopPlaybackAnimation = useCallback(() => {
     if (playbackRafRef.current) {
@@ -571,13 +587,14 @@ export function AudioEditorWindow() {
   }, [pushToast]);
 
   const addAssetToTrack = useCallback((asset: AudioEditorAsset, trackId = project.tracks[1]?.id ?? project.tracks[0].id) => {
+    const nextClipId = createId('audio-clip');
     mutateProject(`Added ${asset.name}`, (current) => {
       const nextTrackId = trackId;
       current.tracks = current.tracks.map((track) => {
         if (track.id !== nextTrackId) return track;
         const start = Math.max(0, ...track.clips.map((clip) => clip.start + clip.duration), 0);
         const clip: AudioEditorClip = {
-          id: createId('audio-clip'),
+          id: nextClipId,
           assetId: asset.id,
           name: asset.name,
           trackId: track.id,
@@ -601,7 +618,7 @@ export function AudioEditorWindow() {
       current.duration = Math.max(current.duration, ...current.tracks.flatMap((track) => track.clips.map((clip) => clip.start + clip.duration)));
       return current;
     });
-    setSelectedClipId(project.tracks[0]?.id ?? null);
+    setSelectedClipId(nextClipId);
     pushToast({ title: 'Audio added', detail: `${asset.name} was added to the timeline.`, tone: 'success' });
   }, [mutateProject, project.tracks, pushToast]);
 
@@ -633,7 +650,11 @@ export function AudioEditorWindow() {
   const startRecording = useCallback(async () => {
     if (recording) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: selectedInputId
+          ? { deviceId: { exact: selectedInputId }, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+          : { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
       recordStreamRef.current = stream;
       recorderChunksRef.current = [];
       const recorder = new MediaRecorder(stream);
@@ -670,15 +691,31 @@ export function AudioEditorWindow() {
       recorder.start();
       setRecording(true);
       setRecordingSeconds(0);
-      pushToast({ title: 'Recording started', detail: 'The microphone is now capturing a new voice take.', tone: 'warning' });
+      pushToast({ title: 'Recording started', detail: monitoring ? 'Monitoring enabled. The microphone is capturing a new voice take.' : 'The microphone is now capturing a new voice take.', tone: 'warning' });
     } catch (error) {
       pushToast({ title: 'Recording unavailable', detail: error instanceof Error ? error.message : 'Microphone access was blocked.', tone: 'danger' });
     }
-  }, [mutateProject, project.assets, pushToast, recording, recordingSeconds]);
+  }, [monitoring, mutateProject, project.assets, pushToast, recording, recordingSeconds, selectedInputId]);
 
   const stopRecording = useCallback(() => {
     recorderRef.current?.stop();
   }, []);
+
+  const startRecordingCountdown = useCallback(() => {
+    if (recording || recordCountdown > 0) return;
+    setRecordCountdown(3);
+    let remaining = 3;
+    const timer = window.setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        window.clearInterval(timer);
+        setRecordCountdown(0);
+        void startRecording();
+      } else {
+        setRecordCountdown(remaining);
+      }
+    }, 850);
+  }, [recordCountdown, recording, startRecording]);
 
   const applyCleanupTool = useCallback((toolId: string) => {
     setProcessingCleanup((current) => current.map((tool) => tool.id === toolId ? { ...tool, processing: true } : tool));
@@ -1032,15 +1069,32 @@ export function AudioEditorWindow() {
               {activeSection === 'record' && (
                 <>
                   <PanelHeader title="Voice recorder" detail="Record a fresh take into your project" />
+                  <div className="audio-record-controls">
+                    <label>
+                      <span>Microphone</span>
+                      <select value={selectedInputId} onChange={(event) => setSelectedInputId(event.target.value)}>
+                        {audioInputs.length === 0 ? <option value="">System default microphone</option> : audioInputs.map((device, index) => (
+                          <option key={device.deviceId} value={device.deviceId}>{device.label || `Microphone ${index + 1}`}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Input gain {Math.round(inputGain * 100)}%</span>
+                      <input type="range" min={0.4} max={1.6} step={0.05} value={inputGain} onChange={(event) => setInputGain(Number(event.target.value))} />
+                    </label>
+                    <button className={`audio-toggle ${monitoring ? 'is-on' : ''}`} type="button" onClick={() => setMonitoring((current) => !current)}>
+                      <Volume2 size={14} /> Monitoring {monitoring ? 'on' : 'off'}
+                    </button>
+                  </div>
                   <div className={`audio-record-card ${recording ? 'is-live' : ''}`}>
                     <div>
                       <strong>{recording ? 'Recording…' : 'Voice capture ready'}</strong>
                       <small>{recording ? `Recording timer ${formatTime(recordingSeconds)}` : 'Recording saved as Voice Take 01, 02, 03…'}</small>
                     </div>
-                    <div className="audio-record-meter"><i style={{ width: `${recordingLevel * 100}%` }} /></div>
+                    <div className="audio-record-meter"><i style={{ width: `${Math.min(1, recordingLevel * inputGain) * 100}%` }} /></div>
                   </div>
                   <div className="audio-inline-actions">
-                    <button className={`primary-button ${recording ? 'recording-active' : ''}`} type="button" onClick={() => void startRecording()} disabled={recording}><Mic size={16} /> Start Recording</button>
+                    <button className={`primary-button ${recording ? 'recording-active' : ''}`} type="button" onClick={startRecordingCountdown} disabled={recording || recordCountdown > 0}><Mic size={16} /> {recordCountdown > 0 ? 'Get ready' : 'Start Recording'}</button>
                     <button className="ghost-button" type="button" onClick={stopRecording} disabled={!recording}><Square size={16} /> Stop Recording</button>
                   </div>
                 </>
@@ -1143,6 +1197,13 @@ export function AudioEditorWindow() {
                 <span className="audio-status-pill">{totalTracks} tracks</span>
                 <span className="audio-status-pill">{autosaveStamp}</span>
               </div>
+            </div>
+
+            <div className={`audio-region-bar ${selectedRegion ? '' : 'is-empty'}`}>
+              <strong>{selectedRegion ? 'Region selected' : 'Drag across the waveform to select a region'}</strong>
+              <span>{selectedRegion ? `${formatTime(selectedRegion.start)} to ${formatTime(selectedRegion.end)} - ${(selectedRegion.end - selectedRegion.start).toFixed(2)}s` : 'Region export, trim previews, and focused cleanup start here.'}</span>
+              {selectedRegion && <button className="secondary-button" type="button" onClick={() => setShowExportModal(true)}><Download size={15} /> Export region</button>}
+              {selectedRegion && <button className="ghost-button" type="button" onClick={() => setProject((current) => ({ ...current, selectedRegion: null }))}>Clear</button>}
             </div>
 
             <div className="audio-ruler">
@@ -1473,7 +1534,7 @@ function AudioExportModal({
   const [quality, setQuality] = useState<AudioEditorQuality>('High');
   const [sampleRate, setSampleRate] = useState<'44.1kHz' | '48kHz'>(project.sampleRate);
   const [bitrate, setBitrate] = useState<'128kbps' | '192kbps' | '320kbps'>('320kbps');
-  const [range, setRange] = useState<'entire' | 'selected'>('entire');
+  const [range, setRange] = useState<'entire' | 'selected'>(project.selectedRegion ? 'selected' : 'entire');
   const [progress, setProgress] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -1491,7 +1552,7 @@ function AudioExportModal({
       setProgress(74);
       const wavBuffer = encodeWav(offlineBuffer);
       setProgress(92);
-      const exportExtension = format === 'wav' ? 'wav' : 'wav';
+      const exportExtension = 'wav';
       const result = await edifyApi.saveAudioEditorBinary({
         suggestedName: fileName.replace(/[<>:"/\\|?*]+/g, '-').trim() || 'Audio Export',
         extension: exportExtension,
@@ -1502,7 +1563,7 @@ function AudioExportModal({
       if (!result?.canceled) {
         const detail = format === 'wav'
           ? `Saved ${result.filePath}`
-          : `Saved as WAV fallback for ${format.toUpperCase()} compatibility in this build.`;
+          : `Saved a WAV master while ${format.toUpperCase()} encoding is prepared for a later renderer update.`;
         setMessage(detail);
         pushToast({ title: 'Export completed', detail, tone: 'success' });
       }
@@ -1532,6 +1593,16 @@ function AudioExportModal({
           <label><span>Sample rate</span><select value={sampleRate} onChange={(event) => setSampleRate(event.target.value as '44.1kHz' | '48kHz')}><option>44.1kHz</option><option>48kHz</option></select></label>
           <label><span>Bitrate</span><select value={bitrate} onChange={(event) => setBitrate(event.target.value as '128kbps' | '192kbps' | '320kbps')}><option>128kbps</option><option>192kbps</option><option>320kbps</option></select></label>
           <label><span>Export range</span><select value={range} onChange={(event) => setRange(event.target.value as 'entire' | 'selected')}><option value="entire">Entire project</option><option value="selected">Selected region</option></select></label>
+        </div>
+        <div className="audio-export-summary">
+          <article>
+            <strong>{range === 'selected' && project.selectedRegion ? `${(project.selectedRegion.end - project.selectedRegion.start).toFixed(2)}s region` : `${project.duration.toFixed(2)}s project`}</strong>
+            <small>{range === 'selected' ? 'Only the highlighted timeline region will render.' : 'Every visible track in the project will render.'}</small>
+          </article>
+          <article>
+            <strong>{sampleRate} / {bitrate}</strong>
+            <small>Current desktop renderer writes a clean WAV master for reliable playback.</small>
+          </article>
         </div>
         <div className="audio-export-progress">
           <div className="audio-export-progress-bar"><i style={{ width: `${progress}%` }} /></div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, AudioLines, ImagePlus, Rocket, Settings2, X } from 'lucide-react';
 import { AudioEditorWindow } from './components/audio/AudioEditorWindow';
 import { EditorShell } from './components/EditorShell';
 import { HomeScreen } from './components/home/HomeScreen';
@@ -21,7 +21,7 @@ type Screen = 'home' | 'editor';
 
 type ForcedUpdateState = {
   visible: boolean;
-  phase: 'available' | 'downloading' | 'downloaded' | 'installing' | 'error';
+  phase: 'checking' | 'available' | 'downloading' | 'downloaded' | 'installing' | 'error';
   percent: number;
   version?: string;
   detail?: string;
@@ -189,6 +189,7 @@ export default function App() {
   const [showClosePrompt, setShowClosePrompt] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [forcedUpdate, setForcedUpdate] = useState<ForcedUpdateState | null>(null);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
 
   const editor = useEditorState(useMemo(() => createDemoProject('Edify Demo Reel'), []));
 
@@ -213,6 +214,21 @@ export default function App() {
   }, [refreshBootstrap]);
 
   useEffect(() => {
+    if (!bootstrap || showConsent) return;
+    const key = `edify-whats-new-${bootstrap.appVersion ?? '0.1.6'}`;
+    if (window.localStorage.getItem(key) !== 'seen') {
+      setShowWhatsNew(true);
+    }
+  }, [bootstrap, showConsent]);
+
+  const dismissWhatsNew = useCallback(() => {
+    if (bootstrap) {
+      window.localStorage.setItem(`edify-whats-new-${bootstrap.appVersion ?? '0.1.6'}`, 'seen');
+    }
+    setShowWhatsNew(false);
+  }, [bootstrap]);
+
+  useEffect(() => {
     void edifyApi.getDesktopAccount()
       .then((user) => {
         setAccountUser(user ?? null);
@@ -230,8 +246,13 @@ export default function App() {
 
   useEffect(() => {
     return edifyApi.onExportProgress((payload: unknown) => {
-      const next = payload as { type?: string; phase?: ForcedUpdateState['phase']; percent?: number; version?: string; detail?: string };
+      const next = payload as { type?: string; phase?: ForcedUpdateState['phase'] | 'idle'; percent?: number; version?: string; detail?: string };
       if (next.type !== 'app-update' || !next.phase) return;
+      if (next.phase === 'idle') {
+        setForcedUpdate(null);
+        pushToast({ title: 'Edify is up to date', detail: next.detail ?? 'No update is required right now.', tone: 'success' });
+        return;
+      }
       setForcedUpdate({
         visible: true,
         phase: next.phase,
@@ -240,7 +261,7 @@ export default function App() {
         detail: next.detail
       });
     });
-  }, []);
+  }, [pushToast]);
 
   useEffect(() => {
     if (screen !== 'editor' || editor.saveStatus === 'saved') return;
@@ -800,28 +821,45 @@ export default function App() {
       {forcedUpdate?.visible && (
         <div className="modal-scrim forced-update-scrim">
           <section className="modal forced-update-modal">
-            <header className="modal-header">
+            <header className="forced-update-hero">
+              <div className="forced-update-icon">
+                <Rocket size={28} />
+              </div>
               <div>
                 <span className="modal-eyebrow">Required update</span>
-                <h2>Updating Edify{forcedUpdate.version ? ` to ${forcedUpdate.version}` : ''}</h2>
+                <h2>Edify is installing a required update</h2>
                 <p>
                   {forcedUpdate.phase === 'available' && 'A required Edify update was found. The app is downloading it now.'}
+                  {forcedUpdate.phase === 'checking' && 'Edify is checking GitHub releases for the latest required desktop build.'}
                   {forcedUpdate.phase === 'downloading' && 'Downloading the required update. Edify will continue as soon as this version is installed.'}
                   {forcedUpdate.phase === 'downloaded' && 'The update is ready. Edify is preparing the installer now.'}
                   {forcedUpdate.phase === 'installing' && 'Installing the required update now. Edify will restart automatically.'}
                   {forcedUpdate.phase === 'error' && 'The required update could not be downloaded correctly. Please restart Edify and try again.'}
                 </p>
               </div>
+              <span className="forced-update-version">{forcedUpdate.version ? `v${forcedUpdate.version}` : 'Latest'}</span>
             </header>
             <div className="forced-update-body">
+              <div className="forced-update-changelog">
+                <strong>What this update improves</strong>
+                <div>
+                  <span><AudioLines size={15} /> Audio Editor polish, clearer waveform, region export, and better recording controls.</span>
+                  <span><ImagePlus size={15} /> Thumbnail Studio fixes and premium workflow stability.</span>
+                  <span><Settings2 size={15} /> Settings Center, update reliability, cache, account, and diagnostics surfaces.</span>
+                </div>
+              </div>
               <div className="forced-update-progress">
+                <div className="forced-update-progress-copy">
+                  <span>{forcedUpdate.phase === 'installing' ? 'Installing update' : forcedUpdate.phase === 'downloading' ? 'Downloading update' : forcedUpdate.phase === 'downloaded' ? 'Preparing restart' : forcedUpdate.phase === 'checking' ? 'Checking releases' : forcedUpdate.phase === 'error' ? 'Update failed' : 'Preparing update'}</span>
+                  <strong>{forcedUpdate.phase === 'error' ? 'Update blocked' : `${Math.max(0, Math.min(100, forcedUpdate.percent))}%`}</strong>
+                </div>
                 <div className="forced-update-progress-bar">
                   <i style={{ width: `${Math.max(8, forcedUpdate.percent)}%` }} />
                 </div>
-                <strong>{forcedUpdate.phase === 'error' ? 'Update blocked' : `${Math.max(0, Math.min(100, forcedUpdate.percent))}%`}</strong>
               </div>
               <div className="forced-update-stage">
-                <span className={forcedUpdate.phase === 'available' ? 'is-active' : ''}>Found</span>
+                <span className={forcedUpdate.phase === 'checking' ? 'is-active' : forcedUpdate.phase !== 'error' ? 'is-done' : ''}>Check</span>
+                <span className={forcedUpdate.phase === 'available' ? 'is-active' : forcedUpdate.phase === 'downloading' || forcedUpdate.phase === 'downloaded' || forcedUpdate.phase === 'installing' ? 'is-done' : ''}>Found</span>
                 <span className={forcedUpdate.phase === 'downloading' ? 'is-active' : forcedUpdate.percent >= 100 ? 'is-done' : ''}>Download</span>
                 <span className={forcedUpdate.phase === 'downloaded' || forcedUpdate.phase === 'installing' ? 'is-active' : ''}>Prepare</span>
                 <span className={forcedUpdate.phase === 'installing' ? 'is-active' : ''}>Install</span>
@@ -835,6 +873,31 @@ export default function App() {
               {forcedUpdate.detail && <small className="forced-update-error">{forcedUpdate.detail}</small>}
             </div>
           </section>
+        </div>
+      )}
+
+      {showWhatsNew && !forcedUpdate?.visible && !showConsent && (
+        <div className="whats-new-dock" role="dialog" aria-label="What's new in Edify">
+          <button className="icon-button whats-new-close" type="button" onClick={dismissWhatsNew} title="Close">
+            <X size={15} />
+          </button>
+          <span className="modal-eyebrow">What's new</span>
+          <h3>Edify {bootstrap?.appVersion ?? '0.1.6'} is ready</h3>
+          <div className="whats-new-list">
+            <article>
+              <AudioLines size={18} />
+              <span><strong>Audio Editor</strong><small>Clearer waveform, region selection, export polish, and recording controls.</small></span>
+            </article>
+            <article>
+              <ImagePlus size={18} />
+              <span><strong>Thumbnail Studio fixes</strong><small>Layer actions, premium flow, and editor stability improved.</small></span>
+            </article>
+            <article>
+              <Rocket size={18} />
+              <span><strong>Performance improvements</strong><small>Dashboard scroll and launch layout feel lighter and cleaner.</small></span>
+            </article>
+          </div>
+          <button className="primary-button" type="button" onClick={dismissWhatsNew}>Continue</button>
         </div>
       )}
 

@@ -1,6 +1,6 @@
 {
   "name": "edify",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "description": "Edify, a local-first premium desktop video editor for Windows.",
   "author": "Edify",
@@ -36,6 +36,7 @@
   "build": {
     "appId": "com.edify.editor",
     "productName": "Edify",
+    "artifactName": "Edify-Setup-${version}.${ext}",
     "directories": {
       "output": "release"
     },

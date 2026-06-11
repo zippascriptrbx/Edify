@@ -218,6 +218,7 @@ type EdifyApi = {
   clearAutosave: () => Promise<any>;
   setSetting: (key: string, value: unknown) => Promise<any>;
   acceptLaunchConsent: (mode: 'all' | 'essential') => Promise<any>;
+  checkForUpdates: () => Promise<{ ok: boolean; status: string; version?: string; detail?: string }>;
   updateWindowState: (payload: {
     screen: 'home' | 'editor';
     saveStatus: string;
@@ -510,6 +511,9 @@ const browserFallback: EdifyApi = {
   async acceptLaunchConsent(_mode: 'all' | 'essential') {
     localStorage.setItem('edify-consent-accepted', 'true');
     return { ok: true };
+  },
+  async checkForUpdates() {
+    return { ok: true, status: 'browser-preview', detail: 'Auto updates are available in the packaged desktop app.' };
   },
   updateWindowState() {
     return;

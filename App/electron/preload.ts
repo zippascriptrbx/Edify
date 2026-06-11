@@ -35,6 +35,7 @@ const edify = {
   clearAutosave: () => ipcRenderer.invoke('edify:clearAutosave'),
   setSetting: (key: string, value: unknown) => ipcRenderer.invoke('edify:setSetting', key, value),
   acceptLaunchConsent: (mode: 'all' | 'essential') => ipcRenderer.invoke('edify:acceptLaunchConsent', mode),
+  checkForUpdates: () => ipcRenderer.invoke('edify:checkForUpdates'),
   updateWindowState: (payload: unknown) => ipcRenderer.send('edify:updateWindowState', payload),
   openExternalUrl: (url: string) => ipcRenderer.invoke('edify:openExternalUrl', url),
   showItemInFolder: (filePath?: string) => ipcRenderer.invoke('edify:showItemInFolder', filePath),

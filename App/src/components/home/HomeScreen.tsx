@@ -25,6 +25,7 @@ type HomeScreenProps = {
 
 const templates = ['Cinematic Reel', 'Gaming Highlight', 'Podcast Clip', 'Product Launch', 'Chill Vlog', 'Shorts Caption Pack'];
 const dashboardCards: Array<{ title: string; detail: string; icon: typeof Rocket; panel: PanelId }> = [
+  { title: '0.2 Suite Hub', detail: 'All new major systems', icon: Sparkles, panel: 'suite' },
   { title: 'Quick Edit', detail: 'One-click styles', icon: Rocket, panel: 'quick' },
   { title: 'Assistant', detail: 'Fix, score, optimize', icon: BrainCircuit, panel: 'assistant' },
   { title: 'AI Lab', detail: 'Captions and helpers', icon: Bot, panel: 'ai' },

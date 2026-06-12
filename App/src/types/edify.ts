@@ -7,6 +7,7 @@ export type ClipKind = 'video' | 'audio' | 'image' | 'text' | 'effect' | 'transi
 export type SaveStatus = 'saved' | 'dirty' | 'saving' | 'autosaved' | 'offline';
 
 export type PanelId =
+  | 'suite'
   | 'media'
   | 'favorites'
   | 'quick'

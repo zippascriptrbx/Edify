@@ -843,9 +843,9 @@ export default function App() {
               <div className="forced-update-changelog">
                 <strong>What this update improves</strong>
                 <div>
-                  <span><AudioLines size={15} /> Audio Editor polish, clearer waveform, region export, and better recording controls.</span>
-                  <span><ImagePlus size={15} /> Thumbnail Studio fixes and premium workflow stability.</span>
-                  <span><Settings2 size={15} /> Settings Center, update reliability, cache, account, and diagnostics surfaces.</span>
+                  <span><AudioLines size={15} /> Audio Studio Pro: beat sync, voice cleanup, silence removal, ducking, and export polish.</span>
+                  <span><ImagePlus size={15} /> Creator Engine 3.0: Magic Edit, AI captions, Marketplace 2.0, templates, and premium packs.</span>
+                  <span><Settings2 size={15} /> Cloud Projects, Client Review, Color Studio, Keyframe Motion, and Edify Assistant surfaces.</span>
                 </div>
               </div>
               <div className="forced-update-progress">
@@ -886,15 +886,15 @@ export default function App() {
           <div className="whats-new-list">
             <article>
               <AudioLines size={18} />
-              <span><strong>Audio Editor</strong><small>Clearer waveform, region selection, export polish, and recording controls.</small></span>
+              <span><strong>Creator Engine 3.0</strong><small>Magic Edit, AI captions, Audio Studio Pro, Marketplace 2.0, Cloud Projects, Color Studio, Keyframes, Review, Templates, and Assistant.</small></span>
             </article>
             <article>
               <ImagePlus size={18} />
-              <span><strong>Thumbnail Studio fixes</strong><small>Layer actions, premium flow, and editor stability improved.</small></span>
+              <span><strong>Audio Studio Pro</strong><small>Beat detection, voice enhance, remove silence, auto ducking, waveform polish, and export clarity.</small></span>
             </article>
             <article>
               <Rocket size={18} />
-              <span><strong>Performance improvements</strong><small>Dashboard scroll and launch layout feel lighter and cleaner.</small></span>
+              <span><strong>Workflow polish</strong><small>Dashboard, update screen, settings center, premium packs, and diagnostics are cleaner.</small></span>
             </article>
           </div>
           <button className="primary-button" type="button" onClick={dismissWhatsNew}>Continue</button>

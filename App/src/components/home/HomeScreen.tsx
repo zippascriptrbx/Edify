@@ -23,23 +23,23 @@ type HomeScreenProps = {
   onDropFiles: (files: FileList | File[]) => void;
 };
 
-const templates = ['Cinematic Reel', 'Gaming Highlight', 'Podcast Clip', 'Product Launch', 'Chill Vlog', 'Shorts Caption Pack'];
+const templates = ['Magic Shorts 3.0', 'Gaming Highlight', 'AI Caption Reel', 'Product Launch', 'Audio Podcast Clip', 'Cinematic Trailer'];
 const dashboardCards: Array<{ title: string; detail: string; icon: typeof Rocket; panel: PanelId }> = [
-  { title: '0.2 Suite Hub', detail: 'All new major systems', icon: Sparkles, panel: 'suite' },
-  { title: 'Quick Edit', detail: 'One-click styles', icon: Rocket, panel: 'quick' },
-  { title: 'Assistant', detail: 'Fix, score, optimize', icon: BrainCircuit, panel: 'assistant' },
-  { title: 'AI Lab', detail: 'Captions and helpers', icon: Bot, panel: 'ai' },
-  { title: 'Voice Studio', detail: 'Record and clean audio', icon: Mic2, panel: 'voice' },
+  { title: 'Creator Engine 3.0', detail: '10 major new systems', icon: Sparkles, panel: 'suite' },
+  { title: 'Magic Edit 3.0', detail: 'Auto cuts, hooks, captions', icon: Rocket, panel: 'quick' },
+  { title: 'Edify Assistant', detail: 'Fix, score, optimize', icon: BrainCircuit, panel: 'assistant' },
+  { title: 'AI Caption Studio', detail: 'Word punch subtitles', icon: Bot, panel: 'captions' },
+  { title: 'Audio Studio Pro', detail: 'Clean, duck, beat sync', icon: Mic2, panel: 'audio' },
   { title: 'Sound Library', detail: 'Chill music and SFX', icon: Music2, panel: 'sounds' },
   { title: 'Render Engine', detail: 'MP4 and preview cache', icon: Cpu, panel: 'render' },
-  { title: 'Review', detail: 'Safety before export', icon: ShieldCheck, panel: 'moderation' },
-  { title: 'Pack Store', detail: 'Free and Premium packs', icon: ShoppingBag, panel: 'marketplace' }
+  { title: 'Client Review', detail: 'Notes and approvals', icon: ShieldCheck, panel: 'moderation' },
+  { title: 'Marketplace 2.0', detail: 'Packs, VIP, rewards', icon: ShoppingBag, panel: 'marketplace' }
 ];
 
 const launchHighlights = [
-  { title: 'Magic Edit ready', detail: 'Build a timeline with music, cuts, captions and effects.', icon: Wand2, panel: 'quick' as PanelId },
-  { title: 'Chill sound packs', detail: 'LoFi, vlog, coffee shop, study and soft pop loops.', icon: Music2, panel: 'sounds' as PanelId },
-  { title: 'Real render path', detail: 'FFmpeg export, audio mix, captions burn and watermark rules.', icon: Cpu, panel: 'render' as PanelId }
+  { title: 'Magic Edit 3.0 ready', detail: 'Build a timeline with music, cuts, captions, zooms and hooks.', icon: Wand2, panel: 'suite' as PanelId },
+  { title: 'AI Caption Studio', detail: 'Word-by-word creator captions, highlights, censure-ready styling.', icon: Music2, panel: 'captions' as PanelId },
+  { title: 'Audio Studio Pro', detail: 'Beat detection, voice enhance, silence removal and auto ducking.', icon: Cpu, panel: 'audio' as PanelId }
 ];
 
 export const HomeScreen = memo(function HomeScreen({
@@ -131,7 +131,7 @@ export const HomeScreen = memo(function HomeScreen({
         <div className="brand-mark large">E</div>
         <div>
           <h1>Edify</h1>
-          <p>Local-first video editing, engineered for sharp cuts, clean timelines, and fast creative flow.</p>
+          <p>Creative editing suite 3.0 for video, captions, audio, thumbnails, templates, premium packs, and review-ready exports.</p>
         </div>
       </section>
 
@@ -140,8 +140,8 @@ export const HomeScreen = memo(function HomeScreen({
           <span className="home-launch-icon"><Video size={20} /></span>
           <span>
             <small>Video</small>
-            <strong>New Video Project</strong>
-            <em>Timeline, captions, render, and export</em>
+            <strong>Magic Edit Project</strong>
+            <em>Timeline, captions, cuts, audio, render, and export</em>
           </span>
         </button>
         <button className="home-launch-card" type="button" onClick={onOpenThumbnailStudio}>
@@ -187,8 +187,8 @@ export const HomeScreen = memo(function HomeScreen({
         <button className="home-dashboard-card home-dashboard-card-new" onClick={onOpenAudioEditor}>
           <AudioLines size={18} />
           <span>
-            <strong>Audio Editor</strong>
-            <small>New waveform, cleanup, record, and mix tools</small>
+            <strong>Audio Studio Pro</strong>
+            <small>Waveform, cleanup, record, mix, beat sync, and ducking</small>
           </span>
           <em>NEW</em>
         </button>
@@ -209,8 +209,8 @@ export const HomeScreen = memo(function HomeScreen({
         })}
         <div className="home-studio-meter">
           <span>Startup kit</span>
-          <strong>30+ systems</strong>
-          <small>Templates, premium, voice, review, render, captions</small>
+          <strong>3.0 systems</strong>
+          <small>Magic Edit, captions, audio, marketplace, cloud, review, color, motion</small>
         </div>
       </section>
 

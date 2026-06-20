@@ -79,7 +79,7 @@ type SidebarProps = {
 };
 
 const sections: Array<{ id: PanelId; label: string; icon: LucideIcon }> = [
-  { id: 'suite', label: '0.2 Hub', icon: Stars },
+  { id: 'suite', label: '3.0 Hub', icon: Stars },
   { id: 'media', label: 'Media', icon: Clapperboard },
   { id: 'favorites', label: 'Favorites', icon: Star },
   { id: 'quick', label: 'Quick', icon: Rocket },
@@ -499,11 +499,11 @@ const suiteLaunchModules = [
   { id: 'captions' as const, name: 'AI Caption Studio', detail: 'Create stylish word-punch captions with glow, hook timing, and censure-ready layout.', badge: 'Captions' },
   { id: 'thumbnail' as const, name: 'Thumbnail Studio Pro 2', detail: 'Open the cover workflow with glow, outline, viral text, packs, and PNG export.', badge: 'PNG' },
   { id: 'audio' as const, name: 'Audio Studio Pro', detail: 'Add beat detection, voice enhance, silence remove, ducking, and premium sound cues.', badge: 'Sound' },
-  { id: 'marketplace' as const, name: 'Marketplace Premium', detail: 'Browse owned packs, locked packs, rewards, promo codes, VIP state, and unlock history.', badge: 'Store' },
+  { id: 'marketplace' as const, name: 'Marketplace Premium 2.0', detail: 'Browse owned packs, locked packs, rewards, promo codes, VIP state, and unlock history.', badge: 'Store' },
   { id: 'cloud' as const, name: 'Cloud Projects', detail: 'Connect account sync for projects, packs, rewards, preferences, presets, and layouts.', badge: 'Account' },
   { id: 'review' as const, name: 'Client Review Mode', detail: 'Add review watermark, timecode notes, safe zones, approval states, and preview workflow.', badge: 'Review' },
   { id: 'color' as const, name: 'Color Studio', detail: 'Apply cinematic LUTs, curves, before/after, scopes, skin tone protect, and exposure pass.', badge: 'Grade' },
-  { id: 'keyframes' as const, name: 'Keyframe Motion Studio', detail: 'Add visible motion keyframes, easing, zoom, opacity, and pop animation presets.', badge: 'Motion' },
+  { id: 'keyframes' as const, name: 'Keyframe Motion Studio', detail: 'Add visible motion keyframes, easing, zoom, opacity, shake, and cinematic push presets.', badge: 'Motion' },
   { id: 'templates' as const, name: 'Template Engine', detail: 'Apply full templates with timeline, captions, sounds, transitions, hooks, and export format.', badge: 'Templates' }
 ];
 
@@ -902,13 +902,18 @@ export function LeftSidebar({
     if (moduleId === 'magic') {
       runMagicEdit('creator');
       runBeatSync();
+      onStudioFeature('hook-generator');
+      onStudioFeature('smart-timeline');
       onPanelChange('quick');
+      pushToast({ title: 'Magic Edit 3.0 built the cut', detail: 'Auto cuts, beat markers, hook text, transitions, captions, and social pacing were added.', tone: 'success' });
       return;
     }
     if (moduleId === 'captions') {
       generateStylishCaptions();
       applyReviewTool('caption-clean');
+      onStudioFeature('auto-captions-style');
       onPanelChange('captions');
+      pushToast({ title: 'AI Caption Studio applied', detail: 'Word-punch captions, glow, hook timing, and readability review were added.', tone: 'success' });
       return;
     }
     if (moduleId === 'thumbnail') {
@@ -920,13 +925,16 @@ export function LeftSidebar({
       ['Voice Enhance Pro', 'Remove Silence Pro', 'Auto Duck Music', 'Beat Detect Pro'].forEach((effect) => onAddEffect(effect));
       const soundAsset = createGeneratedSoundAsset({ name: 'Audio Studio Pro Bed', duration: 10, tag: 'Music' });
       onAddClip(soundAsset);
+      onStudioFeature('voice-tools');
+      runBeatSync();
       onPanelChange('sounds');
       pushToast({ title: 'Audio Studio Pro applied', detail: 'Voice chain, ducking, beat detection, and a music bed were added.', tone: 'success' });
       return;
     }
     if (moduleId === 'marketplace') {
+      onStudioFeature('marketplace-premium');
       onPanelChange('marketplace');
-      pushToast({ title: 'Marketplace Premium', detail: 'Store opened with premium packs, rewards, bundles, and unlock history.', tone: 'info' });
+      pushToast({ title: 'Marketplace Premium 2.0', detail: 'Store opened with premium packs, rewards, bundles, VIP state, and unlock history.', tone: 'info' });
       return;
     }
     if (moduleId === 'cloud') {
@@ -941,7 +949,8 @@ export function LeftSidebar({
       return;
     }
     if (moduleId === 'color') {
-      ['Cinematic Color Studio', 'Curves Control', 'RGB Parade', 'Before After Compare'].forEach((effect) => applyColorEffect(effect));
+      ['Cinematic Color Studio', 'LUT Browser', 'Curves Control', 'Exposure Balance', 'RGB Parade', 'Vectorscope', 'Before After Compare'].forEach((effect) => applyColorEffect(effect));
+      onStudioFeature('color-studio');
       onPanelChange('color');
       return;
     }
@@ -958,20 +967,24 @@ export function LeftSidebar({
           { id: `fx-${Date.now()}-preview`, name: 'Visible Keyframe Track', kind: 'visible-keyframe-track', enabled: true, intensity: 70 }
         ],
         keyframes: [
-          ...clip.keyframes.filter((frame) => !['scale', 'opacity', 'x'].includes(frame.property)),
+          ...clip.keyframes.filter((frame) => !['scale', 'opacity', 'x', 'rotation'].includes(frame.property)),
           { id: `keyframe-${Date.now()}-a`, time: clip.start, property: 'scale', value: Math.max(0.72, clip.transform.scale * 0.82) },
           { id: `keyframe-${Date.now()}-b`, time: clip.start, property: 'opacity', value: 0.15 },
           { id: `keyframe-${Date.now()}-c`, time: clip.start + Math.min(0.45, clip.duration * 0.25), property: 'scale', value: clip.transform.scale * 1.08 },
           { id: `keyframe-${Date.now()}-d`, time: clip.start + Math.min(0.8, clip.duration * 0.38), property: 'scale', value: clip.transform.scale },
           { id: `keyframe-${Date.now()}-e`, time: clip.start + Math.min(0.8, clip.duration * 0.38), property: 'opacity', value: clip.transform.opacity },
-          { id: `keyframe-${Date.now()}-f`, time: clip.start + Math.min(0.8, clip.duration * 0.38), property: 'x', value: clip.transform.x }
+          { id: `keyframe-${Date.now()}-f`, time: clip.start + Math.min(0.8, clip.duration * 0.38), property: 'x', value: clip.transform.x },
+          { id: `keyframe-${Date.now()}-g`, time: clip.start + Math.min(0.3, clip.duration * 0.18), property: 'rotation', value: clip.transform.rotation - 2 },
+          { id: `keyframe-${Date.now()}-h`, time: clip.start + Math.min(0.7, clip.duration * 0.34), property: 'rotation', value: clip.transform.rotation }
         ]
       }));
       pushToast({ title: 'Keyframe Motion Studio', detail: 'Pop-in scale, opacity, easing, and visible keyframe track were added to the selected clip.', tone: 'success' });
       return;
     }
     runVideoTemplate('shorts');
+    onStudioFeature('video-templates');
     onPanelChange('templates');
+    pushToast({ title: 'Template Engine applied', detail: 'A full shorts template with captions, transitions, music, and export format was added.', tone: 'success' });
   };
 
   const runVoicePreset = (name: string, effects: string[]) => {
@@ -1321,8 +1334,8 @@ export function LeftSidebar({
           <div className="feature-stack suite-hub-panel">
             <div className="sidebar-hero-card suite-hero-card">
               <span className="premium-hero-icon"><Rocket size={18} /></span>
-              <h3>Edify 0.2 Creative Suite</h3>
-              <p>Launch the next generation tools from one place: Magic Edit, captions, thumbnail, audio, marketplace, cloud, review, color, motion, and templates.</p>
+              <h3>Edify 3.0 Creator Engine</h3>
+              <p>Launch the major 3.0 systems from one place: Magic Edit, AI captions, Audio Studio Pro, Marketplace 2.0, cloud, review, color, motion, templates, and assistant workflow.</p>
               <div className="suite-hub-stats">
                 <span><strong>10</strong><small>major systems</small></span>
                 <span><strong>{project.tracks.flatMap((track) => track.clips).length}</strong><small>timeline clips</small></span>
@@ -1339,8 +1352,8 @@ export function LeftSidebar({
               ))}
             </div>
             <div className="suite-hub-roadmap">
-              <strong>0.2 workflow</strong>
-              <span>Import clips, run Magic Edit, polish captions, grade color, clean audio, review, then export.</span>
+              <strong>3.0 workflow</strong>
+              <span>Import clips, run Magic Edit 3.0, style captions, clean audio, grade color, add motion, review, then export.</span>
             </div>
           </div>
         )}
